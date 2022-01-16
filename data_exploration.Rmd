@@ -2,7 +2,9 @@
 title: "Data Exploration"
 author: "Clarissa Boyajian"
 date: "1/12/2022"
-output: html_document
+output: 
+html_document:
+  df_print: paged
 ---
 
 ```{r setup, include=FALSE}
@@ -10,9 +12,94 @@ knitr::opts_chunk$set(echo = TRUE)
 
 library(tidyverse)
 library(janitor)
+library(gt)
+
+dir.create(here::here("data"))
+dir.create(here::here("unique_agency_values"))
 ```
 
-## Load Data  
-```{r}
-raw_data <- read.csv("data/FY20_historical_reservations_full_raw.csv")
+## Load Data
+
+```{r, eval=FALSE}
+# Load raw data and choose columns to keep
+raw_data <- read.csv("data/FY20_historical_reservations_full_raw.csv") %>% 
+  select(agency, regioncode, regiondescription, parentlocation, park, sitetype, usetype, 
+         inventorytype, facilityzip, facilitystate, facilitylongitude, 
+         facilitylatitude, customerzip, customerstate, customercountry, 
+         totalpaid, startdate, enddate, orderdate, nights, numberofpeople, 
+         equipmentdescription)
+
+# Create df for each unique agency
+for (i in unique(raw_data$agency)) {
+  assign(i, 
+         raw_data %>% 
+           filter(agency == i), 
+         envir = .GlobalEnv)
+}
 ```
+
+```{r, eval=FALSE}
+# Function to make table of unique column values for given agency df
+unique_agency_values <- function(agency_full_df, title_as_string) {
+  # Create lists of unique values in columns
+  region_code <- unique(agency_full_df$regioncode)
+  region_description <- unique(agency_full_df$regiondescription)
+  parent_location <- unique(agency_full_df$parentlocation)
+  inventory_type <- unique(agency_full_df$inventorytype)
+  site_type <- unique(agency_full_df$sitetype)
+  facility_state <- unique(agency_full_df$facilitystate)
+  customer_state <- unique(agency_full_df$customerstate)
+  
+  # calculate length of longest column
+  table_length <- max(length(region_code), length(region_description),
+                      length(parent_location), length(inventory_type),
+                      length(site_type), length(facility_state),
+                      length(customer_state))
+  
+  # create data frame of columns
+  df <- data.frame(matrix(nrow = table_length))
+  df$region_code <- c(region_code, rep("", nrow(df)-length(region_code)))
+  df$region_description <- c(region_description, rep("", nrow(df)-length(region_description)))
+  df$parent_location <- c(parent_location, rep("", nrow(df)-length(parent_location)))
+  df$facility_state <- c(facility_state, rep("", nrow(df)-length(facility_state)))
+  df$site_type <- c(site_type, rep("", nrow(df)-length(site_type)))
+  df$inventory_type <- c(inventory_type, rep("", nrow(df)-length(inventory_type)))
+  df$customer_state <- c(customer_state, rep("", nrow(df)-length(customer_state)))
+  df <- df[-c(1)]
+  
+  #write df to csv
+  dir.create()
+  write.csv(df, paste0("unique_agency_values/", title_as_string, ".csv"))
+  
+  # turn into a table with input title string
+  table <- gt(df) %>% tab_header(title = title_as_string)
+  
+  return(table)
+}
+```
+
+```{r, eval=FALSE}
+unique_agency_values(BOR, "BOR")
+
+unique_agency_values(FWS, "FWS")
+```
+
+
+## Explore data
+
+#### BOR
+Bureau of Reclamation??
+
+```{r}
+
+```
+
+
+### FWS
+Fish and Wildlife Services
+
+```{r}
+
+```
+
+
